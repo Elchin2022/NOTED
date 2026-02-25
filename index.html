@@ -1,4 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Word Notes</title>
+
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    max-width: 600px;
+    margin: auto;
+  }
+
+  h1 {
+    margin-bottom: 10px;
+  }
+
+  input {
+    padding: 6px;
+    width: 60%;
+  }
+
+  button {
+    padding: 6px 10px;
+    margin-left: 5px;
+    cursor: pointer;
+  }
+
+  ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  li {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px;
+    border-bottom: 1px solid #ddd;
+  }
+
+  .word {
+    font-weight: bold;
+  }
+
+  .controls button {
+    margin-left: 5px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Saved Words</h1>
+
+<input id="newWordInput" placeholder="Add word manually">
+<button onclick="addWord()">Add</button>
+
+<ul id="wordList"></ul>
+
 <script>
+const params = new URLSearchParams(window.location.search);
+const queryWord = params.get("q");
+
 const STORAGE_KEY = "savedWords";
 
 function getWords() {
@@ -13,11 +75,6 @@ function render() {
   const words = getWords();
   const list = document.getElementById("wordList");
   list.innerHTML = "";
-
-  if (words.length === 0) {
-    list.innerHTML = "<p>No saved words yet.</p>";
-    return;
-  }
 
   words.forEach((word, index) => {
     const li = document.createElement("li");
@@ -35,12 +92,15 @@ function render() {
 }
 
 function addWord(wordParam) {
-  let word = wordParam?.trim().toLowerCase();
-  if (!word) return;
-
   const words = getWords();
 
-  // Move to top if exists
+  let word = wordParam || document.getElementById("newWordInput").value.trim();
+
+  if (!word) return;
+
+  word = word.toLowerCase();
+
+  // prevent duplicates
   const existingIndex = words.indexOf(word);
   if (existingIndex !== -1) {
     words.splice(existingIndex, 1);
@@ -48,6 +108,9 @@ function addWord(wordParam) {
 
   words.unshift(word); // newest first
   saveWords(words);
+
+  document.getElementById("newWordInput").value = "";
+  render();
 }
 
 function deleteWord(index) {
@@ -67,22 +130,13 @@ function editWord(index) {
   }
 }
 
-/* -------------------------------
-   On Page Load Logic
---------------------------------- */
+// Auto-save from URL
+if (queryWord) {
+  addWord(queryWord);
+}
 
-document.addEventListener("DOMContentLoaded", () => {
-
-  const params = new URLSearchParams(window.location.search);
-  const queryWord = params.get("q");
-
-  if (queryWord) {
-    addWord(queryWord);
-
-    // Optional: remove query from URL after saving
-    window.history.replaceState({}, document.title, window.location.pathname);
-  }
-
-  render();
-});
+render();
 </script>
+
+</body>
+</html>

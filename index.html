@@ -1,3 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Word Notes</title>
+
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    max-width: 600px;
+    margin: 40px auto;
+    padding: 20px;
+  }
+
+  h1 {
+    text-align: center;
+  }
+
+  #words {
+    margin-top: 20px;
+  }
+
+  .word-item {
+    padding: 8px 12px;
+    border-bottom: 1px solid #ddd;
+    font-size: 18px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Saved Words</h1>
+
+<div id="words"></div>
+
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
@@ -17,22 +53,21 @@ const firebaseConfig = {
   projectId: "wocabulary-53f18",
   storageBucket: "wocabulary-53f18.firebasestorage.app",
   messagingSenderId: "581676289234",
-  appId: "1:581676289234:web:146c7c108fa099b3a6f10b",
+  appId: "1:581676289234:web:146c7c108fa099b3a6f10b"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-
 const wordsCollection = collection(db, "words");
 
-// 1️⃣ Check URL for ?q=
 const params = new URLSearchParams(window.location.search);
 const wordParam = params.get("q");
 
 async function saveWord(word) {
   const cleanWord = word.trim().toLowerCase();
 
-  // prevent duplicates
+  if (!cleanWord) return;
+
   const existingQuery = query(
     wordsCollection,
     where("word", "==", cleanWord)
@@ -61,6 +96,7 @@ async function loadWords() {
 
   snapshot.forEach((doc) => {
     const div = document.createElement("div");
+    div.className = "word-item";
     div.textContent = doc.data().word;
     container.appendChild(div);
   });
@@ -68,14 +104,15 @@ async function loadWords() {
 
 (async () => {
 
-  // Save if word exists in URL
   if (wordParam) {
     await saveWord(wordParam);
   }
 
-  // Always load words
   await loadWords();
 
 })();
 
 </script>
+
+</body>
+</html>

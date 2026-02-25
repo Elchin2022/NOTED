@@ -59,6 +59,7 @@
 
 <!-- Sort Button -->
 <button id="sortBtn">Sort Alphabetically</button>
+  <button id="copyBtn">Copy All</button>
 
 <!-- Word List -->
 <div id="words"></div>
@@ -170,6 +171,25 @@ document.getElementById("sortBtn").addEventListener("click", () => {
   renderWords(sorted);
 });
 
+// COPY ALL
+  document.getElementById("copyBtn").addEventListener("click", async () => {
+
+  if (!currentWords.length) return;
+
+  const textToCopy = currentWords
+    .map(item => item.word)
+    .join("\n");
+
+  try {
+    await navigator.clipboard.writeText(textToCopy);
+    alert("Copied to clipboard!");
+  } catch (err) {
+    alert("Copy failed.");
+  }
+
+});
+
 </script>
 </body>
 </html>
+

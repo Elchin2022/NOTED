@@ -22,9 +22,28 @@
   }
 
   .word-item {
+    display: flex;
+    justify-content: space-between;
     padding: 8px 12px;
     border-bottom: 1px solid #ddd;
     font-size: 18px;
+  }
+
+  button {
+    cursor: pointer;
+    padding: 2px 6px;
+    margin-left: 8px;
+  }
+
+  form {
+    display: flex;
+    margin-bottom: 10px;
+  }
+
+  input[type="text"] {
+    flex: 1;
+    padding: 6px;
+    font-size: 16px;
   }
 </style>
 </head>
@@ -32,6 +51,16 @@
 
 <h1>Saved Words</h1>
 
+<!-- Add Word Form -->
+<form id="addWordForm">
+  <input type="text" id="newWordInput" placeholder="Add a word manually" required />
+  <button type="submit">Add</button>
+</form>
+
+<!-- Sort Button -->
+<button id="sortBtn">Sort Alphabetically</button>
+
+<!-- Word List -->
 <div id="words"></div>
 
 <script type="module">
@@ -42,6 +71,8 @@ import {
   collection, 
   addDoc, 
   getDocs,
+  deleteDoc,
+  doc,
   query, 
   orderBy,
   where
@@ -60,21 +91,22 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const wordsCollection = collection(db, "words");
 
+const wordsContainer = document.getElementById("words");
+
+// URL parameter saving
 const params = new URLSearchParams(window.location.search);
 const wordParam = params.get("q");
 
 async function saveWord(word) {
   const cleanWord = word.trim().toLowerCase();
-
   if (!cleanWord) return;
 
+  // prevent duplicates
   const existingQuery = query(
     wordsCollection,
     where("word", "==", cleanWord)
   );
-
   const snapshot = await getDocs(existingQuery);
-
   if (snapshot.empty) {
     await addDoc(wordsCollection, {
       word: cleanWord,
@@ -83,36 +115,61 @@ async function saveWord(word) {
   }
 }
 
+async function deleteWord(id) {
+  await deleteDoc(doc(db, "words", id));
+  await loadWords();
+}
+
+let currentWords = []; // store loaded words
+
 async function loadWords() {
-  const qRef = query(
-    wordsCollection,
-    orderBy("created", "desc")
-  );
-
+  const qRef = query(wordsCollection, orderBy("created", "desc"));
   const snapshot = await getDocs(qRef);
+  currentWords = snapshot.docs.map(docSnap => ({ id: docSnap.id, word: docSnap.data().word }));
+  renderWords(currentWords);
+}
 
-  const container = document.getElementById("words");
-  container.innerHTML = "";
-
-  snapshot.forEach((doc) => {
+function renderWords(wordsArray) {
+  wordsContainer.innerHTML = "";
+  wordsArray.forEach(item => {
     const div = document.createElement("div");
     div.className = "word-item";
-    div.textContent = doc.data().word;
-    container.appendChild(div);
+    div.textContent = item.word;
+
+    const delBtn = document.createElement("button");
+    delBtn.textContent = "Delete";
+    delBtn.onclick = () => deleteWord(item.id);
+
+    div.appendChild(delBtn);
+    wordsContainer.appendChild(div);
   });
 }
 
+// Save word from URL
 (async () => {
-
   if (wordParam) {
     await saveWord(wordParam);
   }
-
   await loadWords();
-
 })();
 
-</script>
+// Form submit handler
+document.getElementById("addWordForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const input = document.getElementById("newWordInput");
+  const word = input.value.trim();
+  if (!word) return;
+  await saveWord(word);
+  input.value = "";
+  await loadWords();
+});
 
+// Sort alphabetically
+document.getElementById("sortBtn").addEventListener("click", () => {
+  const sorted = [...currentWords].sort((a, b) => a.word.localeCompare(b.word));
+  renderWords(sorted);
+});
+
+</script>
 </body>
 </html>

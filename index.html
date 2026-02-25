@@ -5,9 +5,10 @@ import {
   getFirestore, 
   collection, 
   addDoc, 
+  getDocs,
   query, 
-  orderBy, 
-  onSnapshot 
+  orderBy,
+  where
 } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -22,25 +23,39 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Get ?q=word from URL
-const params = new URLSearchParams(window.location.search);
-const word = params.get("q");
+const wordsCollection = collection(db, "words");
 
-// Save word if exists
-if (word) {
-  await addDoc(collection(db, "words"), {
-    word: word.toLowerCase(),
-    created: new Date()
-  });
+// 1️⃣ Check URL for ?q=
+const params = new URLSearchParams(window.location.search);
+const wordParam = params.get("q");
+
+async function saveWord(word) {
+  const cleanWord = word.trim().toLowerCase();
+
+  // prevent duplicates
+  const existingQuery = query(
+    wordsCollection,
+    where("word", "==", cleanWord)
+  );
+
+  const snapshot = await getDocs(existingQuery);
+
+  if (snapshot.empty) {
+    await addDoc(wordsCollection, {
+      word: cleanWord,
+      created: new Date()
+    });
+  }
 }
 
-// Display words (newest first)
-const qRef = query(
-  collection(db, "words"), 
-  orderBy("created", "desc")
-);
+async function loadWords() {
+  const qRef = query(
+    wordsCollection,
+    orderBy("created", "desc")
+  );
 
-onSnapshot(qRef, (snapshot) => {
+  const snapshot = await getDocs(qRef);
+
   const container = document.getElementById("words");
   container.innerHTML = "";
 
@@ -49,6 +64,18 @@ onSnapshot(qRef, (snapshot) => {
     div.textContent = doc.data().word;
     container.appendChild(div);
   });
-});
+}
+
+(async () => {
+
+  // Save if word exists in URL
+  if (wordParam) {
+    await saveWord(wordParam);
+  }
+
+  // Always load words
+  await loadWords();
+
+})();
 
 </script>

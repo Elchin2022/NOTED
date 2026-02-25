@@ -1,142 +1,54 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Word Notes</title>
+<script type="module">
 
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    padding: 20px;
-    max-width: 600px;
-    margin: auto;
-  }
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+import { 
+  getFirestore, 
+  collection, 
+  addDoc, 
+  query, 
+  orderBy, 
+  onSnapshot 
+} from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-  h1 {
-    margin-bottom: 10px;
-  }
+const firebaseConfig = {
+  apiKey: "AIzaSyDq4hwjFnkPBNzzeJ-HaE-bo_EWGpjzO0k",
+  authDomain: "wocabulary-53f18.firebaseapp.com",
+  projectId: "wocabulary-53f18",
+  storageBucket: "wocabulary-53f18.firebasestorage.app",
+  messagingSenderId: "581676289234",
+  appId: "1:581676289234:web:146c7c108fa099b3a6f10b",
+};
 
-  input {
-    padding: 6px;
-    width: 60%;
-  }
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-  button {
-    padding: 6px 10px;
-    margin-left: 5px;
-    cursor: pointer;
-  }
-
-  ul {
-    list-style: none;
-    padding: 0;
-  }
-
-  li {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px;
-    border-bottom: 1px solid #ddd;
-  }
-
-  .word {
-    font-weight: bold;
-  }
-
-  .controls button {
-    margin-left: 5px;
-  }
-</style>
-</head>
-<body>
-
-<h1>Saved Words</h1>
-
-<input id="newWordInput" placeholder="Add word manually">
-<button onclick="addWord()">Add</button>
-
-<ul id="wordList"></ul>
-
-<script>
+// Get ?q=word from URL
 const params = new URLSearchParams(window.location.search);
-const queryWord = params.get("q");
+const word = params.get("q");
 
-const STORAGE_KEY = "savedWords";
-
-function getWords() {
-  return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-}
-
-function saveWords(words) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(words));
-}
-
-function render() {
-  const words = getWords();
-  const list = document.getElementById("wordList");
-  list.innerHTML = "";
-
-  words.forEach((word, index) => {
-    const li = document.createElement("li");
-
-    li.innerHTML = `
-      <span class="word">${word}</span>
-      <div class="controls">
-        <button onclick="editWord(${index})">Edit</button>
-        <button onclick="deleteWord(${index})">Delete</button>
-      </div>
-    `;
-
-    list.appendChild(li);
+// Save word if exists
+if (word) {
+  await addDoc(collection(db, "words"), {
+    word: word.toLowerCase(),
+    created: new Date()
   });
 }
 
-function addWord(wordParam) {
-  const words = getWords();
+// Display words (newest first)
+const qRef = query(
+  collection(db, "words"), 
+  orderBy("created", "desc")
+);
 
-  let word = wordParam || document.getElementById("newWordInput").value.trim();
+onSnapshot(qRef, (snapshot) => {
+  const container = document.getElementById("words");
+  container.innerHTML = "";
 
-  if (!word) return;
+  snapshot.forEach((doc) => {
+    const div = document.createElement("div");
+    div.textContent = doc.data().word;
+    container.appendChild(div);
+  });
+});
 
-  word = word.toLowerCase();
-
-  // prevent duplicates
-  const existingIndex = words.indexOf(word);
-  if (existingIndex !== -1) {
-    words.splice(existingIndex, 1);
-  }
-
-  words.unshift(word); // newest first
-  saveWords(words);
-
-  document.getElementById("newWordInput").value = "";
-  render();
-}
-
-function deleteWord(index) {
-  const words = getWords();
-  words.splice(index, 1);
-  saveWords(words);
-  render();
-}
-
-function editWord(index) {
-  const words = getWords();
-  const newWord = prompt("Edit word:", words[index]);
-  if (newWord && newWord.trim()) {
-    words[index] = newWord.trim().toLowerCase();
-    saveWords(words);
-    render();
-  }
-}
-
-// Auto-save from URL
-if (queryWord) {
-  addWord(queryWord);
-}
-
-render();
 </script>
-
-</body>
-</html>

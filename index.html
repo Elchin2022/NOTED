@@ -17,24 +17,6 @@
     text-align: center;
   }
 
-  #words {
-    margin-top: 20px;
-  }
-
-  .word-item {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px 12px;
-    border-bottom: 1px solid #ddd;
-    font-size: 18px;
-  }
-
-  button {
-    cursor: pointer;
-    padding: 2px 6px;
-    margin-left: 8px;
-  }
-
   form {
     display: flex;
     margin-bottom: 10px;
@@ -45,6 +27,37 @@
     padding: 6px;
     font-size: 16px;
   }
+
+  button {
+    cursor: pointer;
+    padding: 4px 8px;
+    margin-left: 5px;
+  }
+
+  #controls {
+    margin-bottom: 10px;
+  }
+
+  #words {
+    margin-top: 20px;
+  }
+
+  .word-item {
+    border-bottom: 1px solid #ddd;
+    padding: 10px 0;
+  }
+
+  .word-text {
+    font-size: 18px;
+    margin: 0;
+    user-select: text;
+    -webkit-user-select: text;
+  }
+
+  .delete-btn {
+    margin-top: 5px;
+  }
+
 </style>
 </head>
 <body>
@@ -57,11 +70,11 @@
   <button type="submit">Add</button>
 </form>
 
-<!-- Sort Button -->
-<button id="sortBtn">Sort Alphabetically</button>
-<button id="copyBtn">Copy All</button>
+<div id="controls">
+  <button id="sortBtn">Sort Alphabetically</button>
+  <button id="copyBtn">Copy All</button>
+</div>
 
-<!-- Word List -->
 <div id="words"></div>
 
 <script type="module">
@@ -94,7 +107,9 @@ const wordsCollection = collection(db, "words");
 
 const wordsContainer = document.getElementById("words");
 
-// URL parameter saving
+let currentWords = [];
+
+// Get ?q=word from URL
 const params = new URLSearchParams(window.location.search);
 const wordParam = params.get("q");
 
@@ -102,15 +117,112 @@ async function saveWord(word) {
   const cleanWord = word.trim().toLowerCase();
   if (!cleanWord) return;
 
-  // prevent duplicates
   const existingQuery = query(
     wordsCollection,
     where("word", "==", cleanWord)
   );
+
   const snapshot = await getDocs(existingQuery);
+
   if (snapshot.empty) {
     await addDoc(wordsCollection, {
       word: cleanWord,
+      created: new Date()
+    });
+  }
+}
+
+async function deleteWord(id) {
+  await deleteDoc(doc(db, "words", id));
+  await loadWords();
+}
+
+async function loadWords() {
+  const qRef = query(wordsCollection, orderBy("created", "desc"));
+  const snapshot = await getDocs(qRef);
+
+  currentWords = snapshot.docs.map(docSnap => ({
+    id: docSnap.id,
+    word: docSnap.data().word
+  }));
+
+  renderWords(currentWords);
+}
+
+function renderWords(wordsArray) {
+  wordsContainer.innerHTML = "";
+
+  wordsArray.forEach(item => {
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "word-item";
+
+    // IMPORTANT: Use semantic <p> for dictionary support
+    const wordText = document.createElement("p");
+    wordText.className = "word-text";
+    wordText.textContent = item.word;
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.textContent = "Delete";
+    deleteBtn.className = "delete-btn";
+    deleteBtn.onclick = () => deleteWord(item.id);
+
+    wrapper.appendChild(wordText);
+    wrapper.appendChild(deleteBtn);
+
+    wordsContainer.appendChild(wrapper);
+  });
+}
+
+// Initial load
+(async () => {
+  if (wordParam) {
+    await saveWord(wordParam);
+  }
+  await loadWords();
+})();
+
+// Manual Add
+document.getElementById("addWordForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const input = document.getElementById("newWordInput");
+  const word = input.value.trim();
+  if (!word) return;
+  await saveWord(word);
+  input.value = "";
+  await loadWords();
+});
+
+// Sort Alphabetically
+document.getElementById("sortBtn").addEventListener("click", () => {
+  const sorted = [...currentWords].sort((a, b) => 
+    a.word.localeCompare(b.word)
+  );
+  renderWords(sorted);
+});
+
+// Copy All
+document.getElementById("copyBtn").addEventListener("click", async () => {
+
+  if (!currentWords.length) return;
+
+  const textToCopy = currentWords
+    .map(item => item.word)
+    .join("\n");
+
+  try {
+    await navigator.clipboard.writeText(textToCopy);
+    alert("Copied to clipboard!");
+  } catch (err) {
+    alert("Copy failed.");
+  }
+
+});
+
+</script>
+
+</body>
+</html>      word: cleanWord,
       created: new Date()
     });
   }
@@ -192,5 +304,6 @@ document.getElementById("sortBtn").addEventListener("click", () => {
 </script>
 </body>
 </html>
+
 
 

@@ -212,7 +212,25 @@ async function deleteWord(id) {
   await loadWords();
 }
 
+  function loadFromCache() {
+  const cached = localStorage.getItem("savedWords");
+  if (cached) {
+    const parsed = JSON.parse(cached);
+    currentWords = parsed;
+    renderWords(currentWords);
+  }
+}
+
+function saveToCache(wordsArray) {
+  localStorage.setItem("savedWords", JSON.stringify(wordsArray));
+}
+
 async function loadWords() {
+
+  // Step 1: show cached words immediately
+  loadFromCache();
+
+  // Step 2: fetch fresh data from Firebase
   const qRef = query(wordsCollection, orderBy("created", "desc"));
   const snapshot = await getDocs(qRef);
 
@@ -222,6 +240,9 @@ async function loadWords() {
   }));
 
   renderWords(currentWords);
+
+  // Step 3: update cache
+  saveToCache(currentWords);
 }
 
 function renderWords(wordsArray) {
@@ -292,3 +313,4 @@ document.getElementById("copyBtn").addEventListener("click", async () => {
 
 </body>
 </html>
+

@@ -1,82 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Word Notes</title>
-
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    max-width: 600px;
-    margin: 40px auto;
-    padding: 20px;
-  }
-
-  h1 {
-    text-align: center;
-  }
-
-  form {
-    display: flex;
-    margin-bottom: 10px;
-  }
-
-  input[type="text"] {
-    flex: 1;
-    padding: 6px;
-    font-size: 16px;
-  }
-
-  button {
-    cursor: pointer;
-    padding: 4px 8px;
-    margin-left: 5px;
-  }
-
-  #controls {
-    margin-bottom: 10px;
-  }
-
-  #words {
-    margin-top: 20px;
-  }
-
-  .word-item {
-    border-bottom: 1px solid #ddd;
-    padding: 10px 0;
-  }
-
-  .word-text {
-    font-size: 18px;
-    margin: 0;
-    user-select: text;
-    -webkit-user-select: text;
-  }
-
-  .delete-btn {
-    margin-top: 5px;
-  }
-
-</style>
-</head>
-<body>
-
-<h1>Saved Words</h1>
-
-<!-- Add Word Form -->
-<form id="addWordForm">
-  <input type="text" id="newWordInput" placeholder="Add a word manually" required />
-  <button type="submit">Add</button>
-</form>
-
-<div id="controls">
-  <button id="sortBtn">Sort Alphabetically</button>
-  <button id="copyBtn">Copy All</button>
-</div>
-
-<div id="words"></div>
-
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
@@ -106,10 +27,8 @@ const db = getFirestore(app);
 const wordsCollection = collection(db, "words");
 
 const wordsContainer = document.getElementById("words");
-
 let currentWords = [];
 
-// Get ?q=word from URL
 const params = new URLSearchParams(window.location.search);
 const wordParam = params.get("q");
 
@@ -134,7 +53,7 @@ async function saveWord(word) {
 
 async function deleteWord(id) {
   await deleteDoc(doc(db, "words", id));
-  await loadWords();
+  location.reload();
 }
 
 async function loadWords() {
@@ -154,46 +73,49 @@ function renderWords(wordsArray) {
 
   wordsArray.forEach(item => {
 
-    const wrapper = document.createElement("div");
-    wrapper.className = "word-item";
+    const card = document.createElement("div");
+    card.className = "word-card";
 
-    // IMPORTANT: Use semantic <p> for dictionary support
     const wordText = document.createElement("p");
     wordText.className = "word-text";
     wordText.textContent = item.word;
 
     const deleteBtn = document.createElement("button");
     deleteBtn.textContent = "Delete";
-    deleteBtn.className = "delete-btn";
+    deleteBtn.className = "danger-btn";
     deleteBtn.onclick = () => deleteWord(item.id);
 
-    wrapper.appendChild(wordText);
-    wrapper.appendChild(deleteBtn);
-
-    wordsContainer.appendChild(wrapper);
+    card.appendChild(wordText);
+    card.appendChild(deleteBtn);
+    wordsContainer.appendChild(card);
   });
 }
 
-// Initial load
 (async () => {
+
   if (wordParam) {
     await saveWord(wordParam);
+    // remove ?q= from URL after saving
+    window.location.href = window.location.pathname;
+    return;
   }
+
   await loadWords();
+
 })();
 
-// Manual Add
 document.getElementById("addWordForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   const input = document.getElementById("newWordInput");
   const word = input.value.trim();
   if (!word) return;
+
   await saveWord(word);
-  input.value = "";
-  await loadWords();
+
+  // reload clean page
+  window.location.reload();
 });
 
-// Sort Alphabetically
 document.getElementById("sortBtn").addEventListener("click", () => {
   const sorted = [...currentWords].sort((a, b) => 
     a.word.localeCompare(b.word)
@@ -201,7 +123,6 @@ document.getElementById("sortBtn").addEventListener("click", () => {
   renderWords(sorted);
 });
 
-// Copy All
 document.getElementById("copyBtn").addEventListener("click", async () => {
 
   if (!currentWords.length) return;
@@ -213,13 +134,10 @@ document.getElementById("copyBtn").addEventListener("click", async () => {
   try {
     await navigator.clipboard.writeText(textToCopy);
     alert("Copied to clipboard!");
-  } catch (err) {
+  } catch {
     alert("Copy failed.");
   }
 
 });
 
 </script>
-
-</body>
-</html>

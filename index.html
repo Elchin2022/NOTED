@@ -1,3 +1,83 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Word Notes</title>
+
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    max-width: 600px;
+    margin: 40px auto;
+    padding: 20px;
+  }
+
+  h1 {
+    text-align: center;
+  }
+
+  form {
+    display: flex;
+    margin-bottom: 10px;
+  }
+
+  input[type="text"] {
+    flex: 1;
+    padding: 6px;
+    font-size: 16px;
+  }
+
+  button {
+    cursor: pointer;
+    padding: 4px 8px;
+    margin-left: 5px;
+  }
+
+  #controls {
+    margin-bottom: 10px;
+  }
+
+  #words {
+    margin-top: 20px;
+  }
+
+  .word-item {
+    border-bottom: 1px solid #ddd;
+    padding: 10px 0;
+  }
+
+  .word-text {
+    font-size: 18px;
+    margin: 0;
+    user-select: text;
+    -webkit-user-select: text;
+  }
+
+  .delete-btn {
+    margin-top: 5px;
+  }
+
+</style>
+</head>
+<body>
+
+<h1>Saved Words</h1>
+
+<!-- Add Word Form -->
+<form id="addWordForm">
+  <input type="text" id="newWordInput" placeholder="Add a word manually" required />
+  <button type="submit">Add</button>
+</form>
+
+<div id="controls">
+  <button id="sortBtn">Sort Alphabetically</button>
+  <button id="copyBtn">Copy All</button>
+</div>
+
+<div id="words"></div>
+
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
@@ -141,3 +221,10 @@ document.getElementById("copyBtn").addEventListener("click", async () => {
 });
 
 </script>
+
+
+</body>
+</html>
+
+
+

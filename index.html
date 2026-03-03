@@ -6,131 +6,145 @@
 <title>Word Notes</title>
 
 <style>
-  :root {
-    --primary: #4f46e5;
-    --danger: #ef4444;
-    --bg: #f9fafb;
-    --card: #ffffff;
-    --text: #111827;
-  }
+:root {
+  --primary: #4f46e5;
+  --danger: #ef4444;
+  --bg: #f3f4f6;
+  --card: #ffffff;
+  --text: #111827;
+  --muted: #6b7280;
+}
 
-  * {
-    box-sizing: border-box;
-  }
+* {
+  box-sizing: border-box;
+}
 
-  body {
-    margin: 0;
-    font-family: system-ui, -apple-system, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    display: flex;
-    justify-content: center;
-  }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  display: flex;
+  justify-content: center;
+}
 
-  .container {
-    width: 100%;
-    max-width: 700px;
-    padding: 20px;
-  }
+.container {
+  width: 100%;
+  max-width: 700px;
+  padding: 16px;
+}
 
-  h1 {
-    text-align: center;
-    margin-bottom: 20px;
-  }
+h1 {
+  text-align: center;
+  margin-bottom: 16px;
+}
 
+form {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+input[type="text"] {
+  flex: 1;
+  padding: 12px;
+  font-size: 16px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+}
+
+button {
+  border: none;
+  cursor: pointer;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-weight: 500;
+  transition: 0.2s ease;
+  font-size: 14px;
+}
+
+.primary-btn {
+  background: var(--primary);
+  color: white;
+}
+
+.secondary-btn {
+  background: #e5e7eb;
+}
+
+.danger-btn {
+  background: var(--danger);
+  color: white;
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.word-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.word-card {
+  background: var(--card);
+  padding: 14px;
+  border-radius: 14px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.word-text {
+  margin: 0;
+  font-size: 18px;
+  user-select: text;
+  -webkit-user-select: text;
+  word-break: break-word;
+}
+
+.word-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.edit-input {
+  width: 100%;
+  padding: 8px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+/* Mobile optimization */
+@media (max-width: 480px) {
   form {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 12px;
-  }
-
-  input[type="text"] {
-    flex: 1;
-    padding: 10px;
-    font-size: 16px;
-    border-radius: 8px;
-    border: 1px solid #ddd;
+    flex-direction: column;
   }
 
   button {
-    padding: 10px 14px;
-    border-radius: 8px;
-    border: none;
-    cursor: pointer;
-    font-weight: 500;
-    transition: 0.2s ease;
-  }
-
-  .primary-btn {
-    background: var(--primary);
-    color: white;
-  }
-
-  .primary-btn:hover {
-    opacity: 0.9;
-  }
-
-  .secondary-btn {
-    background: #e5e7eb;
-  }
-
-  .secondary-btn:hover {
-    background: #d1d5db;
-  }
-
-  .danger-btn {
-    background: var(--danger);
-    color: white;
-    padding: 6px 10px;
-  }
-
-  .danger-btn:hover {
-    opacity: 0.85;
+    width: 100%;
   }
 
   .controls {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-  }
-
-  .word-list {
-    display: flex;
     flex-direction: column;
-    gap: 10px;
   }
 
   .word-card {
-    background: var(--card);
-    padding: 14px 16px;
-    border-radius: 12px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .word-actions {
     justify-content: space-between;
-    align-items: center;
   }
-
-  .word-text {
-    margin: 0;
-    font-size: 18px;
-    user-select: text;
-    -webkit-user-select: text;
-  }
-
-  @media (max-width: 480px) {
-    form {
-      flex-direction: column;
-    }
-
-    button {
-      width: 100%;
-    }
-
-    .controls {
-      flex-direction: column;
-    }
-  }
+}
 
 </style>
 </head>
@@ -163,6 +177,7 @@ import {
   addDoc, 
   getDocs,
   deleteDoc,
+  updateDoc,
   doc,
   query, 
   orderBy,
@@ -212,25 +227,14 @@ async function deleteWord(id) {
   await loadWords();
 }
 
-  function loadFromCache() {
-  const cached = localStorage.getItem("savedWords");
-  if (cached) {
-    const parsed = JSON.parse(cached);
-    currentWords = parsed;
-    renderWords(currentWords);
-  }
-}
-
-function saveToCache(wordsArray) {
-  localStorage.setItem("savedWords", JSON.stringify(wordsArray));
+async function updateWord(id, newWord) {
+  await updateDoc(doc(db, "words", id), {
+    word: newWord.trim().toLowerCase()
+  });
+  await loadWords();
 }
 
 async function loadWords() {
-
-  // Step 1: show cached words immediately
-  loadFromCache();
-
-  // Step 2: fetch fresh data from Firebase
   const qRef = query(wordsCollection, orderBy("created", "desc"));
   const snapshot = await getDocs(qRef);
 
@@ -240,9 +244,6 @@ async function loadWords() {
   }));
 
   renderWords(currentWords);
-
-  // Step 3: update cache
-  saveToCache(currentWords);
 }
 
 function renderWords(wordsArray) {
@@ -257,15 +258,59 @@ function renderWords(wordsArray) {
     wordText.className = "word-text";
     wordText.textContent = item.word;
 
+    const actions = document.createElement("div");
+    actions.className = "word-actions";
+
+    const editBtn = document.createElement("button");
+    editBtn.textContent = "Edit";
+    editBtn.className = "secondary-btn";
+
     const deleteBtn = document.createElement("button");
     deleteBtn.textContent = "Delete";
     deleteBtn.className = "danger-btn";
+
+    editBtn.onclick = () => enableEdit(card, item);
     deleteBtn.onclick = () => deleteWord(item.id);
 
+    actions.appendChild(editBtn);
+    actions.appendChild(deleteBtn);
+
     card.appendChild(wordText);
-    card.appendChild(deleteBtn);
+    card.appendChild(actions);
+
     wordsContainer.appendChild(card);
   });
+}
+
+function enableEdit(card, item) {
+
+  card.innerHTML = "";
+
+  const input = document.createElement("input");
+  input.className = "edit-input";
+  input.value = item.word;
+
+  const saveBtn = document.createElement("button");
+  saveBtn.textContent = "Save";
+  saveBtn.className = "primary-btn";
+
+  const cancelBtn = document.createElement("button");
+  cancelBtn.textContent = "Cancel";
+  cancelBtn.className = "secondary-btn";
+
+  const actions = document.createElement("div");
+  actions.className = "word-actions";
+  actions.appendChild(saveBtn);
+  actions.appendChild(cancelBtn);
+
+  card.appendChild(input);
+  card.appendChild(actions);
+
+  saveBtn.onclick = async () => {
+    await updateWord(item.id, input.value);
+  };
+
+  cancelBtn.onclick = () => loadWords();
 }
 
 (async () => {
@@ -286,31 +331,23 @@ document.getElementById("addWordForm").addEventListener("submit", async (e) => {
 });
 
 document.getElementById("sortBtn").addEventListener("click", () => {
-  const sorted = [...currentWords].sort((a, b) => 
+  const sorted = [...currentWords].sort((a, b) =>
     a.word.localeCompare(b.word)
   );
   renderWords(sorted);
 });
 
 document.getElementById("copyBtn").addEventListener("click", async () => {
-
   if (!currentWords.length) return;
 
   const textToCopy = currentWords
     .map(item => item.word)
     .join("\n");
 
-  try {
-    await navigator.clipboard.writeText(textToCopy);
-    alert("Copied to clipboard!");
-  } catch {
-    alert("Copy failed.");
-  }
-
+  await navigator.clipboard.writeText(textToCopy);
+  alert("Copied to clipboard!");
 });
 
 </script>
-
 </body>
 </html>
-
